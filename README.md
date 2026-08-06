@@ -1,19 +1,29 @@
-# 🎈 Blank app template
+# Home Track
 
-A simple Streamlit app template for you to modify!
+Monthly utility usage tracker (water, energy, gas, rent) across multiple properties.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://blank-app-template.streamlit.app/)
+```
+home-track-app/
+├── frontend/  → Streamlit dashboard
+│   ├── streamlit_app.py
+│   └── requirements.txt
+└── backend/   → FastAPI backend + Postgres models
+    ├── app/
+    ├── scripts/
+    ├── requirements.txt
+    └── README.md
+```
 
-### How to run it on your own machine
+### Frontend (Streamlit)
 
-1. Install the requirements
+```
+cd frontend
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+> If deploying on Streamlit Community Cloud, set the app's main file path to `frontend/streamlit_app.py`.
 
-2. Run the app
+### Backend (FastAPI)
 
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+See [`backend/README.md`](backend/README.md) for setup and API endpoints.
