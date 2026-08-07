@@ -37,8 +37,17 @@ def list_usage(
 def upsert_usage(payload: UsageRecordUpsert, db: Session = Depends(get_db)):
     if not db.get(Property, payload.property_id):
         raise HTTPException(status_code=404, detail="Property not found")
-    if not db.get(UtilityType, payload.utility_type_id):
+
+    utility_type = db.get(UtilityType, payload.utility_type_id)
+    if not utility_type:
         raise HTTPException(status_code=404, detail="Utility type not found")
+
+    # If cost isn't given explicitly, derive it from the utility type's
+    # current_rate (value * rate). Pass cost explicitly to override this,
+    # e.g. for a flat/estimated bill that doesn't follow the metered rate.
+    cost = payload.cost
+    if cost is None and utility_type.current_rate is not None:
+        cost = round(payload.value * utility_type.current_rate, 2)
 
     existing = db.scalar(
         select(UsageRecord).where(
@@ -50,10 +59,16 @@ def upsert_usage(payload: UsageRecordUpsert, db: Session = Depends(get_db)):
 
     if existing:
         existing.value = payload.value
-        existing.cost = payload.cost
+        existing.cost = cost
         record = existing
     else:
-        record = UsageRecord(**payload.model_dump())
+        record = UsageRecord(
+            property_id=payload.property_id,
+            utility_type_id=payload.utility_type_id,
+            month=payload.month,
+            value=payload.value,
+            cost=cost,
+        )
         db.add(record)
 
     db.commit()

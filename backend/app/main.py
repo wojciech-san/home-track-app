@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 
 from app.core.db import Base, engine
-from app.routers import properties, usage, utility_types
+from app.routers import leases, properties, usage, utility_types
 
 app = FastAPI(title="Home Track API", version="0.1.0")
 
 app.include_router(properties.router)
 app.include_router(utility_types.router)
 app.include_router(usage.router)
+app.include_router(leases.router)
 
 
 @app.on_event("startup")

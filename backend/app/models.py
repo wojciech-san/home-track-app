@@ -27,6 +27,9 @@ class Property(Base):
     usage_records: Mapped[list["UsageRecord"]] = relationship(
         back_populates="property", cascade="all, delete-orphan"
     )
+    leases: Mapped[list["Lease"]] = relationship(
+        back_populates="property", cascade="all, delete-orphan"
+    )
 
 
 class UtilityType(Base):
@@ -35,6 +38,11 @@ class UtilityType(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)  # water, energy, gas, rent
     unit: Mapped[str | None] = mapped_column(String, nullable=True)  # m3, kWh, PLN, etc.
+    current_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # price per unit (e.g. PLN per m3/kWh), used to auto-calculate a usage
+    # record's cost when one isn't given explicitly. Update this whenever
+    # your provider's price changes — it only affects future calculations,
+    # past usage_records.cost values are left as they were.
 
     usage_records: Mapped[list["UsageRecord"]] = relationship(
         back_populates="utility_type", cascade="all, delete-orphan"
@@ -60,3 +68,27 @@ class UsageRecord(Base):
 
     property: Mapped["Property"] = relationship(back_populates="usage_records")
     utility_type: Mapped["UtilityType"] = relationship(back_populates="usage_records")
+
+
+class Lease(Base):
+    """A tenant's rental agreement for a property. end_date is nullable —
+    leave it empty for an open-ended / month-to-month tenancy."""
+
+    __tablename__ = "leases"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    property_id: Mapped[int] = mapped_column(ForeignKey("properties.id"), nullable=False)
+    tenant_name: Mapped[str] = mapped_column(String, nullable=False)
+    tenant_email: Mapped[str | None] = mapped_column(String, nullable=True)
+    tenant_phone: Mapped[str | None] = mapped_column(String, nullable=True)
+    monthly_rent: Mapped[float] = mapped_column(Float, nullable=False)
+    deposit: Mapped[float | None] = mapped_column(Float, nullable=True)
+    start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    end_date: Mapped[date | None] = mapped_column(Date, nullable=True)  # null = ongoing
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    property: Mapped["Property"] = relationship(back_populates="leases")

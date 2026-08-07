@@ -27,10 +27,16 @@ class PropertyOut(PropertyBase):
 class UtilityTypeBase(BaseModel):
     name: str
     unit: str | None = None
+    current_rate: float | None = None  # price per unit, used to auto-calculate usage cost
 
 
 class UtilityTypeCreate(UtilityTypeBase):
     pass
+
+
+class UtilityTypeUpdate(BaseModel):
+    unit: str | None = None
+    current_rate: float | None = None
 
 
 class UtilityTypeOut(UtilityTypeBase):
@@ -61,6 +67,43 @@ class UsageRecordOut(BaseModel):
     month: date
     value: float
     cost: float | None
+    created_at: datetime
+    updated_at: datetime
+
+
+# ---------- Lease ----------
+
+class LeaseBase(BaseModel):
+    property_id: int
+    tenant_name: str
+    tenant_email: str | None = None
+    tenant_phone: str | None = None
+    monthly_rent: float
+    deposit: float | None = None
+    start_date: date
+    end_date: date | None = None  # leave empty for an open-ended / month-to-month lease
+    notes: str | None = None
+
+
+class LeaseCreate(LeaseBase):
+    pass
+
+
+class LeaseUpdate(BaseModel):
+    tenant_name: str | None = None
+    tenant_email: str | None = None
+    tenant_phone: str | None = None
+    monthly_rent: float | None = None
+    deposit: float | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    notes: str | None = None
+
+
+class LeaseOut(LeaseBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
     created_at: datetime
     updated_at: datetime
 
