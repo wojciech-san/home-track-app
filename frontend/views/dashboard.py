@@ -1,10 +1,28 @@
-from datetime import date, timedelta
+from datetime import date, datetime
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from lib.api import ApiError, list_leases, list_properties, usage_summary
+from lib.api import ApiError, list_leases, list_properties, list_usage, usage_summary
+
+
+def shift_month(d: date, delta: int) -> date:
+    """Return the 1st of the month that is `delta` months away from d's month."""
+    total = d.year * 12 + (d.month - 1) + delta
+    year, month = divmod(total, 12)
+    return date(year, month + 1, 1)
+
+
+def month_select(label: str, default: date, min_month: date, max_month: date) -> date:
+    """A YYYY-MM dropdown, scoped to the range of months that actually have data."""
+    options = pd.date_range(start=min_month, end=max_month, freq="MS").date.tolist()
+    labels = [d.strftime("%Y-%m") for d in options]
+    default_label = default.strftime("%Y-%m")
+    index = labels.index(default_label) if default_label in labels else len(labels) - 1
+    chosen = st.selectbox(label, labels, index=index)
+    return datetime.strptime(chosen, "%Y-%m").date()
+
 
 st.title("Dashboard")
 
@@ -23,12 +41,30 @@ else:
     col1, col2, col3 = st.columns(3)
     with col1:
         property_name = st.selectbox("Property", list(property_options.keys()))
-    with col2:
-        month_from = st.date_input("From", value=date.today().replace(day=1) - timedelta(days=180))
-    with col3:
-        month_to = st.date_input("To", value=date.today())
 
     selected_property_id = property_options[property_name]
+
+    # Scope the From/To dropdowns to months that actually have usage data for
+    # this property (or across all properties, if "All properties" is picked).
+    try:
+        existing_records = list_usage(property_id=selected_property_id)
+    except ApiError as e:
+        st.error(str(e))
+        existing_records = []
+
+    if existing_records:
+        record_months = sorted(datetime.strptime(r["month"], "%Y-%m-%d").date() for r in existing_records)
+        data_min_month = record_months[0].replace(day=1)
+        data_max_month = record_months[-1].replace(day=1)
+    else:
+        data_min_month = data_max_month = date.today().replace(day=1)
+
+    default_from = max(data_min_month, shift_month(data_max_month, -6))
+
+    with col2:
+        month_from = month_select("From", default_from, data_min_month, data_max_month)
+    with col3:
+        month_to = month_select("To", data_max_month, data_min_month, data_max_month)
 
     try:
         summary = usage_summary(
