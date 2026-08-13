@@ -24,12 +24,12 @@ if properties:
 else:
     st.info("No properties yet.")
 
-st.subheader("Add a property")
-with st.form("add_property", clear_on_submit=True):
-    name = st.text_input("Name")
-    address = st.text_input("Address")
-    notes = st.text_area("Notes")
-    submitted = st.form_submit_button("Add property")
+with st.expander("Add a property"):
+    with st.form("add_property", clear_on_submit=True):
+        name = st.text_input("Name")
+        address = st.text_input("Address")
+        notes = st.text_area("Notes")
+        submitted = st.form_submit_button("Add property")
 
 if submitted:
     if not name:

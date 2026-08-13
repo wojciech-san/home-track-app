@@ -27,14 +27,14 @@ else:
         "or run scripts/seed_utility_types.py on the backend."
     )
 
-st.subheader("Add a utility type")
-with st.form("add_utility_type", clear_on_submit=True):
-    name = st.text_input("Name (e.g. water, energy, gas, rent)")
-    unit = st.text_input("Unit (e.g. m3, kWh, PLN)")
-    current_rate = st.number_input(
-        "Current rate (price per unit)", min_value=0.0, step=0.01, format="%.4f"
-    )
-    submitted = st.form_submit_button("Add utility type")
+with st.expander("Add a utility type"):
+    with st.form("add_utility_type", clear_on_submit=True):
+        name = st.text_input("Name (e.g. water, energy, gas, rent)")
+        unit = st.text_input("Unit (e.g. m3, kWh, PLN)")
+        current_rate = st.number_input(
+            "Current rate (price per unit)", min_value=0.0, step=0.01, format="%.4f"
+        )
+        submitted = st.form_submit_button("Add utility type")
 
 if submitted:
     if not name:
@@ -47,25 +47,25 @@ if submitted:
         except ApiError as e:
             st.error(str(e))
 
-st.subheader("Update a rate")
-if utility_types:
-    options = {u["name"]: u for u in utility_types}
-    choice = st.selectbox("Utility type", list(options.keys()))
-    selected = options[choice]
-    new_rate = st.number_input(
-        "New current rate",
-        min_value=0.0,
-        step=0.01,
-        format="%.4f",
-        value=float(selected["current_rate"] or 0.0),
-        key="update_rate",
-    )
-    if st.button("Update rate"):
-        try:
-            update_utility_type(selected["id"], current_rate=new_rate)
-            st.success("Rate updated.")
-            st.rerun()
-        except ApiError as e:
-            st.error(str(e))
-else:
-    st.caption("Add a utility type first.")
+with st.expander("Update a rate"):
+    if utility_types:
+        options = {u["name"]: u for u in utility_types}
+        choice = st.selectbox("Utility type", list(options.keys()))
+        selected = options[choice]
+        new_rate = st.number_input(
+            "New current rate",
+            min_value=0.0,
+            step=0.01,
+            format="%.4f",
+            value=float(selected["current_rate"] or 0.0),
+            key="update_rate",
+        )
+        if st.button("Update rate"):
+            try:
+                update_utility_type(selected["id"], current_rate=new_rate)
+                st.success("Rate updated.")
+                st.rerun()
+            except ApiError as e:
+                st.error(str(e))
+    else:
+        st.caption("Add a utility type first.")
